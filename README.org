@@ -1,0 +1,2 @@
+* Qiqi 
+Depends on [[https://github.com/raynei86/qiku][qiku]].
