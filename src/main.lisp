@@ -1,3 +1,3 @@
 (defpackage qiqi
-  (:use :cl))
+  (:use :cl :iterate))
 (in-package :qiqi)

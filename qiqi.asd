@@ -4,10 +4,12 @@
   :mailto "zlihui486@gmail.com"
   :license "GPL3"
   :depends-on ("iterate"
-               "qiku")
+               "qiku"
+	       "serapeum")
   :components ((:module "src"
                 :components
-                ((:file "main"))))
+                ((:file "main")
+		 (:file "eval"))))
   :description "A Chess engine in Common Lisp"
   :in-order-to ((test-op (test-op "qiqi/tests"))))
 
