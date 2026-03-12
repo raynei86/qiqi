@@ -100,3 +100,32 @@
     (for piece = (qiku:piece-at state square))
     (unless (zerop piece)
       (sum (score-piece piece square)))))
+
+(defun negamax (state depth alpha beta)
+  (let ((moves (qiku:generate-legal-moves state)))
+    (cond
+      ((qiku:checkmate-p state moves) most-negative-short-float)
+      ((qiku:stalemate-p state moves) 0.0)
+      ((zerop depth) (evaluate state))
+
+      (t
+       (iterate
+         (for move in moves)
+         (qiku:do-move! state move)
+         (for score = (- (negamax state (1- depth) (- beta) (- alpha))))
+         (qiku:undo-move! state move)
+         (maximizing score into best)
+         (setf alpha (max alpha best))
+         (when (>= alpha beta) (finish))
+         (finally (return best)))))))
+
+(defun best-move (state depth)
+  (let ((alpha most-positive-short-float)
+	(beta most-negative-short-float))
+    (iterate
+      (for move in (qiku:generate-legal-moves state))
+      (qiku:do-move! state move)
+      (for score = (- (negamax state (1- depth) (- beta) (- alpha))))
+      (qiku:undo-move! state move)
+      (finding move maximizing score)
+      (setf alpha (max alpha score)))))
