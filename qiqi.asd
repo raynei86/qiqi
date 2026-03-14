@@ -5,11 +5,13 @@
   :license "GPL3"
   :depends-on ("iterate"
                "qiku"
-	       "serapeum")
+	       "serapeum"
+	       "str")
   :components ((:module "src"
                 :components
                 ((:file "main")
-		 (:file "eval"))))
+		 (:file "eval" :depends-on ("constants"))
+		 (:file "constants"))))
   :description "A Chess engine in Common Lisp"
   :in-order-to ((test-op (test-op "qiqi/tests"))))
 

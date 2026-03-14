@@ -27,10 +27,60 @@
         (- value))))
 
 (defun move-priority (move)
-  (if (qiku:move-captured move)
-      (- (getf *material-values* (qiku:piece-type (qiku:move-captured move)) 0.0)
-         (getf *material-values* (qiku:piece-type (qiku:move-piece    move)) 0.0))
-      -1000.0))
+  (if (logand (qiku:move-flags move) qiku:+capture-flag+)
+      (- (cdr (assoc (qiku:piece-type (qiku:move-captured move)) *material-values*))
+         (cdr (assoc (qiku:piece-type (qiku:move-piece    move)) *material-values*)))
+      -1100.0))
+
+(defun score-isolated-pawns (pawns)
+  (iter
+    (for file from 0 to 7)
+    (for file-mask = (aref qiku:+file-masks+ file))
+    (for adjacent-mask = (qiku:adjacent-files-mask file))
+    (when (and (not (zerop (logand pawns file-mask)))
+	       (zerop (logand pawns adjacent-mask)))
+      (sum (* (logcount (logand pawns file-mask)) -30.0)))))
+
+(defun score-doubled-pawns (pawns)
+  (iter
+    (for file from 0 to 7)
+    (for pawns-on-file = (logcount (logand pawns (aref qiku:+file-masks+ file))))
+    (sum (* (max 0 (1- pawns-on-file)) -10.0))))
+
+(defun score-passed-pawns (pawns enemy-pawns color)
+  (flet ((passed-pawn-mask (square color)
+	   (let ((file  (qiku:square-file square))
+		 (rank  (qiku:square-rank square)))
+	     (iter
+	       (with mask = 0)
+	       (for r from (if (= color qiku:+white+) (1+ rank) 0)
+		    to   (if (= color qiku:+white+) 7 (1- rank)))
+	       (for adjacent = (logior (aref qiku:+file-masks+ file)
+				       (qiku:adjacent-files-mask file)))
+	       (setf mask (logior mask (logand adjacent
+					       (iter
+						 (for f from 0 to 7)
+						 (sum (ash 1 (+ (* r 8) f)))))))
+	       (finally (return mask))))))
+    (iter
+      (for square in (qiku:bb-squares pawns))
+      (for rank = (qiku:square-rank square))
+      (when (zerop (logand enemy-pawns (passed-pawn-mask square color)))
+	(let ((distance (if (= color qiku:+white+)
+			    (- 7 rank)
+			    rank)))
+	  ;; Further is better
+	  (sum (aref #(0.0 10.0 20.0 30.0 50.0 70.0 150.0 0.0) distance)))))))
+
+(defun score-pawn-structure (state)
+  (let ((white-pawns (qiku:state-white-pawns state))
+        (black-pawns (qiku:state-black-pawns state)))
+    (- (+ (score-doubled-pawns  white-pawns)
+          (score-isolated-pawns white-pawns)
+          (score-passed-pawns   white-pawns black-pawns qiku:+white+))
+       (+ (score-doubled-pawns  black-pawns)
+          (score-isolated-pawns black-pawns)
+          (score-passed-pawns   black-pawns white-pawns qiku:+black+)))))
 
 (defun order-moves (moves)
   (sort (copy-list moves) #'> :key #'move-priority))
@@ -40,7 +90,9 @@
     (for square from 0 to 63)
     (for piece = (qiku:piece-at state square))
     (unless (zerop piece)
-      (sum (score-piece piece square)))))
+      (sum (+
+	    (score-pawn-structure state)
+	    (score-piece piece square))))))
 
 (defun quiescence (state alpha beta)
   (let ((stand-pat (evaluate state)))
