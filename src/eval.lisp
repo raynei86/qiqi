@@ -20,16 +20,16 @@
           index)))
 
 (defun score-piece (piece square)
-  (let ((value (+ (cdr (assoc (qiku:piece-type piece) *material-values*))
+  (let ((value (+ (aref +material-values+ (qiku:piece-type piece))
                   (pst-bonus piece square))))
     (if (= (qiku:piece-color piece) qiku:+white+)
         value
         (- value))))
 
 (defun move-priority (move)
-  (if (logand (qiku:move-flags move) qiku:+capture-flag+)
-      (- (cdr (assoc (qiku:piece-type (qiku:move-captured move)) *material-values*))
-         (cdr (assoc (qiku:piece-type (qiku:move-piece    move)) *material-values*)))
+  (if (not (zerop (logand (qiku:move-flags move) qiku:+capture-flag+)))
+      (- (aref +material-values+ (qiku:piece-type (qiku:move-captured move)))
+         (aref +material-values+ (qiku:piece-type (qiku:move-piece    move))))
       -1100.0))
 
 (defun score-isolated-pawns (pawns)
@@ -45,7 +45,7 @@
   (iter
     (for file from 0 to 7)
     (for pawns-on-file = (logcount (logand pawns (aref qiku:+file-masks+ file))))
-    (sum (* (max 0 (1- pawns-on-file)) -10.0))))
+    (sum (* (max 0 (1- pawns-on-file)) -30.0))))
 
 (defun score-passed-pawns (pawns enemy-pawns color)
   (flet ((passed-pawn-mask (square color)
@@ -70,7 +70,7 @@
 			    (- 7 rank)
 			    rank)))
 	  ;; Further is better
-	  (sum (aref #(0.0 10.0 20.0 30.0 50.0 70.0 150.0 0.0) distance)))))))
+	  (sum (aref #(0.0 10.0 30.0 50.0 70.0 100.0 150.0 0.0) distance)))))))
 
 (defun score-pawn-structure (state)
   (let ((white-pawns (qiku:state-white-pawns state))
@@ -86,13 +86,12 @@
   (sort (copy-list moves) #'> :key #'move-priority))
 
 (defun evaluate (state)
-  (iter
-    (for square from 0 to 63)
-    (for piece = (qiku:piece-at state square))
-    (unless (zerop piece)
-      (sum (+
-	    (score-pawn-structure state)
-	    (score-piece piece square))))))
+  (+ (score-pawn-structure state)
+   (iter
+     (for square from 0 to 63)
+     (for piece = (qiku:piece-at state square))
+     (unless (zerop piece)
+       (sum (score-piece piece square))))))
 
 (defun quiescence (state alpha beta)
   (let ((stand-pat (evaluate state)))
@@ -128,8 +127,8 @@
          (finally (return best)))))))
 
 (defun best-move (state depth)
-  (let ((alpha most-positive-short-float)
-	(beta most-negative-short-float))
+  (let ((alpha most-negative-short-float)
+	(beta most-positive-short-float))
     (iter
       (for move in (qiku:generate-legal-moves state))
       (qiku:do-move! state move)

@@ -1,22 +1,24 @@
 (in-package :qiqi)
 
-(serapeum:defconst *material-values*
-  (list (cons qiku:+pawn+ 100.0)
-	(cons qiku:+rook+ 500.0)
-	(cons qiku:+knight+ 320.0)
-	(cons qiku:+bishop+ 330.0)
-	(cons qiku:+queen+ 900.0)
-	(cons qiku:+king+ 20000.0)))
+(serapeum:defconst +material-values+
+  (let ((v (make-array 7 :initial-element 0.0 :element-type 'single-float)))
+    (setf (aref v qiku:+pawn+)   100.0
+          (aref v qiku:+rook+)   500.0
+          (aref v qiku:+knight+) 320.0
+          (aref v qiku:+bishop+) 330.0
+          (aref v qiku:+queen+)  900.0
+          (aref v qiku:+king+)   20000.0)
+    v))
 
 (serapeum:defconst +pawn-pst+
   #(  0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0
-     50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0
-     10.0  10.0  20.0  30.0  30.0  20.0  10.0  10.0
-      5.0   5.0  10.0  25.0  25.0  10.0   5.0   5.0
-      0.0   0.0   0.0  20.0  20.0   0.0   0.0   0.0
-      5.0  -5.0 -10.0   0.0   0.0 -10.0  -5.0   5.0
-      5.0  10.0  10.0 -20.0 -20.0  10.0  10.0   5.0
-      0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0))
+    50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0
+    10.0  10.0  20.0  30.0  30.0  20.0  10.0  10.0
+    5.0   5.0  10.0  25.0  25.0  10.0   5.0   5.0
+    0.0   0.0   0.0  20.0  20.0   0.0   0.0   0.0
+    5.0  -5.0 -10.0   0.0   0.0 -10.0  -5.0   5.0
+    5.0  10.0  10.0 -20.0 -20.0  10.0  10.0   5.0
+    0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0))
 
 (serapeum:defconst +knight-pst+
   #(-50.0 -40.0 -30.0 -30.0 -30.0 -30.0 -40.0 -50.0
